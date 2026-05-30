@@ -47,80 +47,80 @@ public class CharacterizationTest {
 
     // --- Required behavior: matching by color ---------------------------------
     static void matchByColor() {
-        eq("color match: R2 on R9", true, Main.isLegal("R2", "R9", ""));
-        eq("color match: B8 on B3", true, Main.isLegal("B8", "B3", ""));
-        eq("color mismatch alone is not enough: B3 on R9", false, Main.isLegal("B3", "R9", ""));
+        eq("color match: R2 on R9", true, Main.isLegal(c("R2"), c("R9"), ""));
+        eq("color match: B8 on B3", true, Main.isLegal(c("B8"), c("B3"), ""));
+        eq("color mismatch alone is not enough: B3 on R9", false, Main.isLegal(c("B3"), c("R9"), ""));
     }
 
     // --- Required behavior: matching by number --------------------------------
     static void matchByNumber() {
-        eq("number match across colors: G9 on R9", true, Main.isLegal("G9", "R9", ""));
-        eq("number match: B0 on G0", true, Main.isLegal("B0", "G0", ""));
-        eq("different number, different color is illegal: G8 on R9", false, Main.isLegal("G8", "R9", ""));
+        eq("number match across colors: G9 on R9", true, Main.isLegal(c("G9"), c("R9"), ""));
+        eq("number match: B0 on G0", true, Main.isLegal(c("B0"), c("G0"), ""));
+        eq("different number, different color is illegal: G8 on R9", false, Main.isLegal(c("G8"), c("R9"), ""));
     }
 
     // --- Required behavior: matching by action type ---------------------------
     static void matchByActionType() {
-        eq("skip on skip (diff color): BS on RS", true, Main.isLegal("BS", "RS", ""));
-        eq("reverse on reverse (diff color): YR on GR", true, Main.isLegal("YR", "GR", ""));
-        eq("draw-two on draw-two (diff color): R+2 on G+2", true, Main.isLegal("R+2", "G+2", ""));
+        eq("skip on skip (diff color): BS on RS", true, Main.isLegal(c("BS"), c("RS"), ""));
+        eq("reverse on reverse (diff color): YR on GR", true, Main.isLegal(c("YR"), c("GR"), ""));
+        eq("draw-two on draw-two (diff color): R+2 on G+2", true, Main.isLegal(c("R+2"), c("G+2"), ""));
         // Quirk: an action card does NOT match a number card, even of "matching" value.
-        eq("skip does not match a number: BS on R9", false, Main.isLegal("BS", "R9", ""));
+        eq("skip does not match a number: BS on R9", false, Main.isLegal(c("BS"), c("R9"), ""));
     }
 
     // --- Required behavior: wild and wild draw four ---------------------------
     static void wildAndWildDrawFour() {
-        eq("wild is always legal: W on R9", true, Main.isLegal("W", "R9", ""));
-        eq("wild draw four is always legal: W4 on G+2", true, Main.isLegal("W4", "G+2", ""));
-        eq("wild is legal even over a called color: W on (W called B)", true, Main.isLegal("W", "W", "B"));
+        eq("wild is always legal: W on R9", true, Main.isLegal(c("W"), c("R9"), ""));
+        eq("wild draw four is always legal: W4 on G+2", true, Main.isLegal(c("W4"), c("G+2"), ""));
+        eq("wild is legal even over a called color: W on (W called B)", true, Main.isLegal(c("W"), c("W"), "B"));
     }
 
     // --- Required behavior: color called after a wild -------------------------
     static void calledColorAfterWild() {
-        eq("called color matches: B3 on wild called B", true, Main.isLegal("B3", "W", "B"));
-        eq("wrong color vs called color is illegal: R3 on wild called B", false, Main.isLegal("R3", "W", "B"));
+        eq("called color matches: B3 on wild called B", true, Main.isLegal(c("B3"), c("W"), "B"));
+        eq("wrong color vs called color is illegal: R3 on wild called B", false, Main.isLegal(c("R3"), c("W"), "B"));
     }
 
     static void illegalMismatch() {
-        eq("plain mismatch is illegal: B3 on R9", false, Main.isLegal("B3", "R9", ""));
+        eq("plain mismatch is illegal: B3 on R9", false, Main.isLegal(c("B3"), c("R9"), ""));
     }
 
     // --- Card parsing characterization (color / rank / number) ----------------
     static void cardParsing() {
-        eq("color of R5", "R", Main.color("R5"));
-        eq("color of YS", "Y", Main.color("YS"));
-        eq("color of G+2", "G", Main.color("G+2"));
-        eq("color of BR", "B", Main.color("BR"));
-        eq("color of wild is empty", "", Main.color("W"));
-        eq("color of wild four is empty", "", Main.color("W4"));
+        eq("color of R5", "R", c("R5").color());
+        eq("color of YS", "Y", c("YS").color());
+        eq("color of G+2", "G", c("G+2").color());
+        eq("color of BR", "B", c("BR").color());
+        eq("color of wild is empty", "", c("W").color());
+        eq("color of wild four is empty", "", c("W4").color());
 
-        eq("rank of R5 is NUMBER", "NUMBER", Main.rank("R5"));
-        eq("rank of YS is SKIP", "SKIP", Main.rank("YS"));
-        eq("rank of BR is REVERSE", "REVERSE", Main.rank("BR"));
-        eq("rank of G+2 is DRAW_TWO", "DRAW_TWO", Main.rank("G+2"));
-        eq("rank of W is WILD", "WILD", Main.rank("W"));
-        eq("rank of W4 is WILD_DRAW_FOUR", "WILD_DRAW_FOUR", Main.rank("W4"));
+        eq("rank of R5 is NUMBER", Rank.NUMBER, c("R5").rank());
+        eq("rank of YS is SKIP", Rank.SKIP, c("YS").rank());
+        eq("rank of BR is REVERSE", Rank.REVERSE, c("BR").rank());
+        eq("rank of G+2 is DRAW_TWO", Rank.DRAW_TWO, c("G+2").rank());
+        eq("rank of W is WILD", Rank.WILD, c("W").rank());
+        eq("rank of W4 is WILD_DRAW_FOUR", Rank.WILD_DRAW_FOUR, c("W4").rank());
 
-        eq("number of R5", 5, Main.number("R5"));
-        eq("number of B0", 0, Main.number("B0"));
-        eq("number of non-number is -1", -1, Main.number("YS"));
+        eq("number of R5", 5, c("R5").number());
+        eq("number of B0", 0, c("B0").number());
+        eq("number of non-number is -1", -1, c("YS").number());
     }
 
     // --- Required behavior: scoring -------------------------------------------
     static void scoringPoints() {
-        eq("number card scores face value", 5, Main.points("R5"));
-        eq("zero card scores zero", 0, Main.points("B0"));
-        eq("skip scores 20", 20, Main.points("YS"));
-        eq("reverse scores 20", 20, Main.points("BR"));
-        eq("draw-two scores 20", 20, Main.points("G+2"));
-        eq("wild scores 50", 50, Main.points("W"));
-        eq("wild draw four scores 50", 50, Main.points("W4"));
+        eq("number card scores face value", 5, c("R5").points());
+        eq("zero card scores zero", 0, c("B0").points());
+        eq("skip scores 20", 20, c("YS").points());
+        eq("reverse scores 20", 20, c("BR").points());
+        eq("draw-two scores 20", 20, c("G+2").points());
+        eq("wild scores 50", 50, c("W").points());
+        eq("wild draw four scores 50", 50, c("W4").points());
     }
 
     // --- Bot strategy characterization ----------------------------------------
     static void botCardPriority() {
         // Up card R9, no called color.
-        Main.upCard = "R9";
+        Main.upCard = c("R9");
         Main.calledColor = "";
 
         // Draw-two is preferred over a legal number.
@@ -145,12 +145,12 @@ public class CharacterizationTest {
     // then any wild. A REVERSE is never selected from the hand: the bot draws
     // instead, even though a same-color reverse is a perfectly legal play.
     static void botNeverPlaysReverseFromHand_surprise() {
-        Main.upCard = "R9";   // RR (red reverse) is legal here by color.
+        Main.upCard = c("R9");   // RR (red reverse) is legal here by color.
         Main.calledColor = "";
         eq("SURPRISE: bot ignores a legal reverse and draws (-1)", -1,
                 Main.chooseBotCard(hand("RR")));
         // Sanity: the same reverse IS considered legal by the rules.
-        eq("the ignored reverse really is legal", true, Main.isLegal("RR", "R9", ""));
+        eq("the ignored reverse really is legal", true, Main.isLegal(c("RR"), c("R9"), ""));
     }
 
     static void botColorChoice() {
@@ -182,10 +182,14 @@ public class CharacterizationTest {
 
     // --- helpers --------------------------------------------------------------
 
-    static ArrayList<String> hand(String... cards) {
-        ArrayList<String> h = new ArrayList<String>();
-        for (String c : cards) {
-            h.add(c);
+    static Card c(String code) {
+        return new Card(code);
+    }
+
+    static ArrayList<Card> hand(String... cards) {
+        ArrayList<Card> h = new ArrayList<Card>();
+        for (String code : cards) {
+            h.add(new Card(code));
         }
         return h;
     }
