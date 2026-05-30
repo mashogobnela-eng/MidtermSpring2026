@@ -1,6 +1,4 @@
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -8,8 +6,7 @@ public class Main {
     static ArrayList<String> playerNames = new ArrayList<String>();
     static ArrayList<Boolean> humanPlayers = new ArrayList<Boolean>();
     static ArrayList<ArrayList<Card>> hands = new ArrayList<ArrayList<Card>>();
-    static ArrayList<Card> deck = new ArrayList<Card>();
-    static ArrayList<Card> discard = new ArrayList<Card>();
+    static Deck deck;
     static int[] scores = new int[10];
     static int currentPlayer = 0;
     static int direction = 1;
@@ -46,6 +43,7 @@ public class Main {
         }
 
         random = new Random(seed);
+        deck = new Deck(random);
         setupPlayers(bots, human);
 
         if (playerNames.size() < 2 || playerNames.size() > 4) {
@@ -83,39 +81,19 @@ public class Main {
     }
 
     static void playGame() {
-        deck.clear();
-        String[] colors = {"R", "Y", "G", "B"};
-        for (int c = 0; c < colors.length; c++) {
-            deck.add(new Card(colors[c] + "0"));
-            for (int n = 1; n <= 9; n++) {
-                deck.add(new Card(colors[c] + n));
-                deck.add(new Card(colors[c] + n));
-            }
-            deck.add(new Card(colors[c] + "S"));
-            deck.add(new Card(colors[c] + "S"));
-            deck.add(new Card(colors[c] + "R"));
-            deck.add(new Card(colors[c] + "R"));
-            deck.add(new Card(colors[c] + "+2"));
-            deck.add(new Card(colors[c] + "+2"));
-        }
-        for (int i = 0; i < 4; i++) {
-            deck.add(new Card("W"));
-            deck.add(new Card("W4"));
-        }
-        Collections.shuffle(deck, random);
-        discard.clear();
+        deck.startNewDeck();
         for (int i = 0; i < hands.size(); i++) {
             hands.get(i).clear();
         }
         for (int i = 0; i < playerNames.size(); i++) {
             for (int j = 0; j < 7; j++) {
-                hands.get(i).add(draw());
+                hands.get(i).add(deck.draw());
             }
         }
-        upCard = draw();
+        upCard = deck.draw();
         while (upCard.isWild()) {
-            discard.add(upCard);
-            upCard = draw();
+            deck.discard(upCard);
+            upCard = deck.draw();
         }
         calledColor = "";
         direction = 1;
@@ -140,7 +118,7 @@ public class Main {
             }
 
             if (chosen == -1) {
-                Card drawn = draw();
+                Card drawn = deck.draw();
                 hand.add(drawn);
                 if (!quiet) {
                     System.out.println(name + " draws " + drawn);
@@ -163,7 +141,7 @@ public class Main {
                     if (!quiet) {
                         System.out.println(name + " selected an invalid index and draws a penalty card.");
                     }
-                    hand.add(draw());
+                    hand.add(deck.draw());
                     next();
                     continue;
                 }
@@ -175,13 +153,13 @@ public class Main {
                     if (!quiet) {
                         System.out.println(name + " tried illegal card " + card + " and draws a penalty card.");
                     }
-                    hand.add(draw());
+                    hand.add(deck.draw());
                     next();
                     continue;
                 }
 
                 hand.remove(chosen);
-                discard.add(upCard);
+                deck.discard(upCard);
                 upCard = card;
                 calledColor = "";
                 if (!quiet) {
@@ -230,8 +208,8 @@ public class Main {
                     }
                 } else if (card.rank() == Rank.DRAW_TWO) {
                     next();
-                    hands.get(currentPlayer).add(draw());
-                    hands.get(currentPlayer).add(draw());
+                    hands.get(currentPlayer).add(deck.draw());
+                    hands.get(currentPlayer).add(deck.draw());
                     if (!quiet) {
                         System.out.println(playerNames.get(currentPlayer) + " draws two.");
                     }
@@ -239,7 +217,7 @@ public class Main {
                 } else if (card.rank() == Rank.WILD_DRAW_FOUR) {
                     next();
                     for (int i = 0; i < 4; i++) {
-                        hands.get(currentPlayer).add(draw());
+                        hands.get(currentPlayer).add(deck.draw());
                     }
                     if (!quiet) {
                         System.out.println(playerNames.get(currentPlayer) + " draws four.");
@@ -255,18 +233,6 @@ public class Main {
         if (!quiet) {
             System.out.println("Game stopped at safety limit.");
         }
-    }
-
-    static Card draw() {
-        if (deck.size() == 0) {
-            deck.addAll(discard);
-            discard.clear();
-            Collections.shuffle(deck, random);
-        }
-        if (deck.size() == 0) {
-            return new Card("W");
-        }
-        return deck.remove(0);
     }
 
     static int chooseBotCard(ArrayList<Card> hand) {
