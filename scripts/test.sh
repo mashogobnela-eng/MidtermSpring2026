@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-scripts/compile.sh
-java -cp out Main --self-test
+rm -rf out
+mkdir -p out
+javac -d out src/*.java tests/*.java
+java -cp out CharacterizationTest

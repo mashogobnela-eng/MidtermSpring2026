@@ -1,0 +1,4 @@
+
+Final scores:
+Bot1: 0
+Bot2: 0
