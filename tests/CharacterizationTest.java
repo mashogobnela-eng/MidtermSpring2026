@@ -47,42 +47,42 @@ public class CharacterizationTest {
 
     // --- Required behavior: matching by color ---------------------------------
     static void matchByColor() {
-        eq("color match: R2 on R9", true, Main.isLegal(c("R2"), c("R9"), ""));
-        eq("color match: B8 on B3", true, Main.isLegal(c("B8"), c("B3"), ""));
-        eq("color mismatch alone is not enough: B3 on R9", false, Main.isLegal(c("B3"), c("R9"), ""));
+        eq("color match: R2 on R9", true, Rules.isLegal(c("R2"), c("R9"), ""));
+        eq("color match: B8 on B3", true, Rules.isLegal(c("B8"), c("B3"), ""));
+        eq("color mismatch alone is not enough: B3 on R9", false, Rules.isLegal(c("B3"), c("R9"), ""));
     }
 
     // --- Required behavior: matching by number --------------------------------
     static void matchByNumber() {
-        eq("number match across colors: G9 on R9", true, Main.isLegal(c("G9"), c("R9"), ""));
-        eq("number match: B0 on G0", true, Main.isLegal(c("B0"), c("G0"), ""));
-        eq("different number, different color is illegal: G8 on R9", false, Main.isLegal(c("G8"), c("R9"), ""));
+        eq("number match across colors: G9 on R9", true, Rules.isLegal(c("G9"), c("R9"), ""));
+        eq("number match: B0 on G0", true, Rules.isLegal(c("B0"), c("G0"), ""));
+        eq("different number, different color is illegal: G8 on R9", false, Rules.isLegal(c("G8"), c("R9"), ""));
     }
 
     // --- Required behavior: matching by action type ---------------------------
     static void matchByActionType() {
-        eq("skip on skip (diff color): BS on RS", true, Main.isLegal(c("BS"), c("RS"), ""));
-        eq("reverse on reverse (diff color): YR on GR", true, Main.isLegal(c("YR"), c("GR"), ""));
-        eq("draw-two on draw-two (diff color): R+2 on G+2", true, Main.isLegal(c("R+2"), c("G+2"), ""));
+        eq("skip on skip (diff color): BS on RS", true, Rules.isLegal(c("BS"), c("RS"), ""));
+        eq("reverse on reverse (diff color): YR on GR", true, Rules.isLegal(c("YR"), c("GR"), ""));
+        eq("draw-two on draw-two (diff color): R+2 on G+2", true, Rules.isLegal(c("R+2"), c("G+2"), ""));
         // Quirk: an action card does NOT match a number card, even of "matching" value.
-        eq("skip does not match a number: BS on R9", false, Main.isLegal(c("BS"), c("R9"), ""));
+        eq("skip does not match a number: BS on R9", false, Rules.isLegal(c("BS"), c("R9"), ""));
     }
 
     // --- Required behavior: wild and wild draw four ---------------------------
     static void wildAndWildDrawFour() {
-        eq("wild is always legal: W on R9", true, Main.isLegal(c("W"), c("R9"), ""));
-        eq("wild draw four is always legal: W4 on G+2", true, Main.isLegal(c("W4"), c("G+2"), ""));
-        eq("wild is legal even over a called color: W on (W called B)", true, Main.isLegal(c("W"), c("W"), "B"));
+        eq("wild is always legal: W on R9", true, Rules.isLegal(c("W"), c("R9"), ""));
+        eq("wild draw four is always legal: W4 on G+2", true, Rules.isLegal(c("W4"), c("G+2"), ""));
+        eq("wild is legal even over a called color: W on (W called B)", true, Rules.isLegal(c("W"), c("W"), "B"));
     }
 
     // --- Required behavior: color called after a wild -------------------------
     static void calledColorAfterWild() {
-        eq("called color matches: B3 on wild called B", true, Main.isLegal(c("B3"), c("W"), "B"));
-        eq("wrong color vs called color is illegal: R3 on wild called B", false, Main.isLegal(c("R3"), c("W"), "B"));
+        eq("called color matches: B3 on wild called B", true, Rules.isLegal(c("B3"), c("W"), "B"));
+        eq("wrong color vs called color is illegal: R3 on wild called B", false, Rules.isLegal(c("R3"), c("W"), "B"));
     }
 
     static void illegalMismatch() {
-        eq("plain mismatch is illegal: B3 on R9", false, Main.isLegal(c("B3"), c("R9"), ""));
+        eq("plain mismatch is illegal: B3 on R9", false, Rules.isLegal(c("B3"), c("R9"), ""));
     }
 
     // --- Card parsing characterization (color / rank / number) ----------------
@@ -150,7 +150,7 @@ public class CharacterizationTest {
         eq("SURPRISE: bot ignores a legal reverse and draws (-1)", -1,
                 Main.chooseBotCard(hand("RR")));
         // Sanity: the same reverse IS considered legal by the rules.
-        eq("the ignored reverse really is legal", true, Main.isLegal(c("RR"), c("R9"), ""));
+        eq("the ignored reverse really is legal", true, Rules.isLegal(c("RR"), c("R9"), ""));
     }
 
     static void botColorChoice() {
