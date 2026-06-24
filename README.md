@@ -1,71 +1,130 @@
-# Midterm UNO CLI
+# UNO CLI
 
-This is a standalone CLI UNO-like game.
+A command-line UNO-like game in Java. This repository continues the midterm UNO
+project; **Assignment 4** turns it into a standard Maven project with automated
+tests, event logging, and Docker support.
 
-The code is written as plausible feature-grown Java: almost everything lives in one procedural `Main` class. It works, but it has mixed responsibilities, duplicated rule logic, primitive-heavy card handling, global state, and condition-heavy gameplay code. The goal is to refactor it safely, not rewrite it.
+## Requirements
 
-## Compile
+- Java 17 (JDK)
+- Maven 3.9+
+- Docker (optional, for the container commands)
 
-```bash
-scripts/compile.sh
-```
+## Commands
 
-## Run Bot Games
+All commands run from the repository root.
 
-```bash
-scripts/run.sh --bots 3 --games 5 --quiet
-```
-
-## Run Interactive Game
+### Local build (compile)
 
 ```bash
-scripts/run.sh --human --bots 2 --games 1
+mvn compile
 ```
 
-Card input examples:
+### Local test
+
+Runs the full JUnit 5 suite (unit checks **and** the end-to-end golden
+transcripts) through Maven — no manual classpath setup:
+
+```bash
+mvn test
+```
+
+### Package (create the runnable jar)
+
+Produces a self-contained executable jar at `target/uno.jar`:
+
+```bash
+mvn package
+```
+
+### Local run
+
+```bash
+# after packaging:
+java -jar target/uno.jar --bots 3 --games 5 --quiet
+
+# or compile-and-run in one step:
+mvn -q exec:java -Dexec.args="--bots 3 --games 5 --quiet"
+```
+
+### Docker build
+
+Builds the application entirely from repository contents:
+
+```bash
+docker build -t uno .
+```
+
+### Docker run
+
+```bash
+# bot game (overrides the default CMD):
+docker run --rm uno --bots 3 --games 1 --quiet
+
+# interactive game (note the -it for stdin):
+docker run --rm -it uno --human --bots 2 --games 1
+```
+
+## Helper scripts
+
+Thin wrappers around the Maven commands above:
+
+```bash
+scripts/compile.sh                 # mvn compile
+scripts/test.sh                    # mvn test
+scripts/run.sh --bots 3 --quiet    # package + java -jar
+```
+
+## Command-line options
+
+| Option        | Meaning                                   |
+| ------------- | ----------------------------------------- |
+| `--bots N`    | number of bot players                     |
+| `--games N`   | number of games to play                   |
+| `--human`     | add a human player ("You")                |
+| `--quiet`     | suppress per-turn output, show final score |
+| `--seed N`    | fixed RNG seed (deterministic games)      |
+| `--help`      | print usage                               |
+
+## Interactive play
+
+When playing with `--human`, enter a card by index or by code, or `draw`:
 
 ```text
-R5   red 5
-YS   yellow skip
-BR   blue reverse
-G+2  green draw two
-W    wild
-W4   wild draw four
-draw draw a card
+R5    red 5
+YS    yellow skip
+BR    blue reverse
+G+2   green draw two
+W     wild
+W4    wild draw four
+draw  draw a card
 ```
 
-## Characterization Checks
+## Logging
 
-```bash
-scripts/test.sh
+Important game events — game start, player turn, card played, card drawn,
+invalid input, and round/game end — are written to `logs/uno.log` via
+`java.util.logging`. Logging goes **only to the file**, never to the console, so
+it never replaces the player-facing CLI output. Override the directory with
+`-Duno.log.dir=<path>`.
+
+## Project layout
+
+```text
+pom.xml                          Maven build
+Dockerfile                       multi-stage build + run image
+src/main/java/uno/               game source (Card, Deck, Rank, Rules, Main, GameLog)
+src/test/java/uno/               JUnit 5 tests (CharacterizationTest)
+src/test/resources/golden/       recorded golden transcripts
+scripts/                         convenience wrappers
+docs/                            rules and midterm materials
 ```
-
-## Submission
-
-Submit your work through GitHub:
-
-1. Fork this repository to your GitHub account.
-2. Clone your fork locally.
-3. Complete the midterm work in your fork.
-4. Commit your changes with clear commit messages.
-5. Push your branch to GitHub.
-6. Open a pull request from your fork back to the original repository.
-
-Your pull request must include:
-
-* refactored source code
-* characterization tests
-* `docs/refactoring-report.md`
-* `docs/extension-readiness.md`
-
-Do not submit a zip file instead of a pull request unless the instructor explicitly asks for it.
 
 ## Rules
 
 See `docs/rules.html` for the implemented game rules.
 
-## Midterm Materials
+## Submission
 
-* `docs/midterm-exam.md`: midterm brief
-* `docs/rubric.md`: grading rubric
-* `docs/refactoring-guide.md`: suggested refactoring path
+Work is delivered through GitHub branches (`assignment-4`, `assignment-5`,
+`final`), each branched from the previous one, with a pull request per branch.
