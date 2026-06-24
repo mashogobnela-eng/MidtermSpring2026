@@ -24,6 +24,9 @@ public class Main {
     static long seed = 0;
     static boolean save = false;
     static String reportMode = null;
+    static int target = 0;
+    static boolean unoPenalty = false;
+    static final int MATCH_ROUND_CAP = 1000;
     static int roundCounter = 0;
     static ArrayList<GameResult.RoundResult> roundResults = new ArrayList<GameResult.RoundResult>();
     static Random random = new Random();
@@ -53,11 +56,18 @@ public class Main {
                 if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
                     reportMode = args[++i];
                 }
+            } else if (args[i].equals("--target")) {
+                target = Scoreboard.DEFAULT_TARGET;
+                if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
+                    target = Integer.parseInt(args[++i]);
+                }
+            } else if (args[i].equals("--uno-penalty")) {
+                unoPenalty = true;
             } else if (args[i].equals("--self-test")) {
                 selfTest();
                 return;
             } else if (args[i].equals("--help")) {
-                System.out.println("Usage: scripts/run.sh [--bots N] [--games N] [--human] [--quiet] [--seed N] [--save] [--report [recent|wins|highscores]]");
+                System.out.println("Usage: scripts/run.sh [--bots N] [--games N] [--human] [--quiet] [--seed N] [--save] [--report [recent|wins|highscores]] [--target [N]] [--uno-penalty]");
                 return;
             }
         }
@@ -78,11 +88,24 @@ public class Main {
             return;
         }
 
-        for (int g = 1; g <= games; g++) {
-            if (!quiet) {
-                System.out.println("\n=== Game " + g + " ===");
+        if (target > 0) {
+            // Multi-round match: play rounds until a player reaches the target
+            // score (with a safety cap in case weak bots keep stalling).
+            int g = 0;
+            while (!Scoreboard.reachedTarget(scores, playerNames.size(), target) && g < MATCH_ROUND_CAP) {
+                g++;
+                if (!quiet) {
+                    System.out.println("\n=== Round " + g + " (target " + target + ") ===");
+                }
+                playGame();
             }
-            playGame();
+        } else {
+            for (int g = 1; g <= games; g++) {
+                if (!quiet) {
+                    System.out.println("\n=== Game " + g + " ===");
+                }
+                playGame();
+            }
         }
 
         System.out.println("\nFinal scores:");
@@ -94,6 +117,13 @@ public class Main {
             }
             summary.append(playerNames.get(i)).append("=").append(scores[i]);
         }
+
+        if (target > 0) {
+            int w = Scoreboard.leader(scores, playerNames.size());
+            System.out.println("\nMatch winner: " + playerNames.get(w)
+                    + " with " + scores[w] + " points (target " + target + ").");
+        }
+
         GameLog.gameEnd(summary.toString());
 
         if (save) {
@@ -225,8 +255,30 @@ public class Main {
                     }
                 }
 
-                if (hand.size() == 1 && !quiet) {
-                    System.out.println(name + " says UNO!");
+                if (hand.size() == 1) {
+                    // One-card state. By default everyone declares UNO. With the
+                    // --uno-penalty rule, a human must actively call it; failing
+                    // to do so draws a penalty (bots always remember to call).
+                    boolean declared = true;
+                    if (unoPenalty && humanPlayers.get(currentPlayer).booleanValue()) {
+                        declared = askUnoCall();
+                    }
+                    if (declared) {
+                        if (!quiet) {
+                            System.out.println(name + " says UNO!");
+                        }
+                    } else {
+                        int pen = UnoCall.penalty(false, hand.size());
+                        for (int i = 0; i < pen; i++) {
+                            Card p = deck.draw();
+                            hand.add(p);
+                            GameLog.cardDrawn(name, p.toString());
+                        }
+                        GameLog.invalidInput(name, "missed UNO call, drew " + pen);
+                        if (!quiet) {
+                            System.out.println(name + " forgot to call UNO and draws " + pen + ".");
+                        }
+                    }
                 }
 
                 if (hand.size() == 0) {
@@ -353,6 +405,12 @@ public class Main {
         }
     }
 
+    static boolean askUnoCall() {
+        System.out.print("Call UNO? y/n: ");
+        String input = scanner.nextLine().trim().toUpperCase();
+        return input.equals("Y") || input.equals("YES");
+    }
+
     static String askColor() {
         while (true) {
             System.out.print("Call color R/Y/G/B: ");
@@ -402,13 +460,7 @@ public class Main {
     }
 
     static void next() {
-        currentPlayer += direction;
-        if (currentPlayer >= playerNames.size()) {
-            currentPlayer = 0;
-        }
-        if (currentPlayer < 0) {
-            currentPlayer = playerNames.size() - 1;
-        }
+        currentPlayer = Rules.nextPlayer(currentPlayer, direction, playerNames.size());
     }
 
     static String join(ArrayList<Card> cards) {

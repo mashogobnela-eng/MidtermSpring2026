@@ -44,4 +44,20 @@ public final class Rules {
         }
         return total;
     }
+
+    /**
+     * Index of the next player in turn order, wrapping around the table.
+     * {@code direction} is +1 for clockwise and -1 for counterclockwise. Skip is
+     * two advances in the same direction; Reverse flips the direction first.
+     */
+    public static int nextPlayer(int current, int direction, int playerCount) {
+        int next = current + direction;
+        if (next >= playerCount) {
+            next = 0;
+        }
+        if (next < 0) {
+            next = playerCount - 1;
+        }
+        return next;
+    }
 }

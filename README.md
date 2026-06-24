@@ -84,6 +84,8 @@ scripts/run.sh --bots 3 --quiet    # package + java -jar
 | `--human`     | add a human player ("You")                |
 | `--quiet`     | suppress per-turn output, show final score |
 | `--seed N`    | fixed RNG seed (deterministic games)      |
+| `--target [N]` | play a multi-round match to N points (default 500), then declare a winner |
+| `--uno-penalty` | require calling "UNO" at one card; a human who forgets draws 2 |
 | `--save`      | save the finished game to the database    |
 | `--report [recent\|wins\|highscores]` | show history/stats, then exit |
 | `--help`      | print usage                               |
@@ -129,12 +131,28 @@ java -jar target/uno.jar --report highscores
 Full details — schema, ORM configuration, and how to run the persistence tests —
 are in [`docs/database.md`](docs/database.md).
 
+## Full UNO rules & match options
+
+```bash
+# multi-round match to 500 points, with the UNO-call penalty rule:
+java -jar target/uno.jar --human --bots 3 --target 500 --uno-penalty
+```
+
+- `--target N` plays rounds until a player reaches `N` points (default 500) and
+  announces a match winner.
+- `--uno-penalty` enables the UNO-call rule: a human reduced to one card must
+  call "UNO" or draw a 2-card penalty (bots always call).
+
+Supported rules and variants are in
+[`docs/rules-supported.md`](docs/rules-supported.md); the design and test summary
+is in [`docs/final-report.md`](docs/final-report.md).
+
 ## Project layout
 
 ```text
 pom.xml                          Maven build
 Dockerfile                       multi-stage build + run image
-src/main/java/uno/               game source (Card, Deck, Rank, Rules, Main, GameLog)
+src/main/java/uno/               game source (Card, Deck, Rank, Rules, UnoCall, Scoreboard, Main, GameLog)
 src/main/java/uno/persistence/   ORM layer (entities, Database, GameRepository, Reports)
 src/main/resources/META-INF/     persistence.xml (JPA configuration)
 src/test/java/uno/               JUnit 5 tests (CharacterizationTest)

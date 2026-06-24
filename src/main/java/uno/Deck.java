@@ -20,27 +20,39 @@ public final class Deck {
         this.random = random;
     }
 
+    /**
+     * Build a fresh, unshuffled standard 108-card UNO deck: four colors, one 0
+     * and two each of 1-9 per color, two each of Skip/Reverse/Draw-Two per
+     * color, and four Wild plus four Wild Draw Four. Exposed (and side-effect
+     * free) so deck composition can be unit tested directly.
+     */
+    public static List<Card> buildStandardDeck() {
+        List<Card> cards = new ArrayList<Card>();
+        String[] colors = {"R", "Y", "G", "B"};
+        for (int c = 0; c < colors.length; c++) {
+            cards.add(new Card(colors[c] + "0"));
+            for (int n = 1; n <= 9; n++) {
+                cards.add(new Card(colors[c] + n));
+                cards.add(new Card(colors[c] + n));
+            }
+            cards.add(new Card(colors[c] + "S"));
+            cards.add(new Card(colors[c] + "S"));
+            cards.add(new Card(colors[c] + "R"));
+            cards.add(new Card(colors[c] + "R"));
+            cards.add(new Card(colors[c] + "+2"));
+            cards.add(new Card(colors[c] + "+2"));
+        }
+        for (int i = 0; i < 4; i++) {
+            cards.add(new Card("W"));
+            cards.add(new Card("W4"));
+        }
+        return cards;
+    }
+
     /** Build a fresh shuffled 108-card deck and empty the discard pile. */
     public void startNewDeck() {
         drawPile.clear();
-        String[] colors = {"R", "Y", "G", "B"};
-        for (int c = 0; c < colors.length; c++) {
-            drawPile.add(new Card(colors[c] + "0"));
-            for (int n = 1; n <= 9; n++) {
-                drawPile.add(new Card(colors[c] + n));
-                drawPile.add(new Card(colors[c] + n));
-            }
-            drawPile.add(new Card(colors[c] + "S"));
-            drawPile.add(new Card(colors[c] + "S"));
-            drawPile.add(new Card(colors[c] + "R"));
-            drawPile.add(new Card(colors[c] + "R"));
-            drawPile.add(new Card(colors[c] + "+2"));
-            drawPile.add(new Card(colors[c] + "+2"));
-        }
-        for (int i = 0; i < 4; i++) {
-            drawPile.add(new Card("W"));
-            drawPile.add(new Card("W4"));
-        }
+        drawPile.addAll(buildStandardDeck());
         Collections.shuffle(drawPile, random);
         discardPile.clear();
     }

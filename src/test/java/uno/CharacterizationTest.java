@@ -178,6 +178,15 @@ public class CharacterizationTest {
                 "--bots", "4", "--games", "1", "--seed", "7", "--quiet");
     }
 
+    // --- Final project: multi-round match-to-target golden -------------------
+    @Test
+    void targetMatchGolden() throws Exception {
+        // A deterministic match played to a target score, ending with the final
+        // "Match winner" line (rubric 1.10: round scoring + multi-round target).
+        assertGolden("/golden/g_target200_3bots_seed7.txt",
+                "--bots", "3", "--target", "200", "--seed", "7", "--quiet");
+    }
+
     // --- helpers --------------------------------------------------------------
 
     static Card c(String code) {

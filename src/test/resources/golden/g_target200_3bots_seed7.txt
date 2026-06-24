@@ -1,0 +1,7 @@
+
+Final scores:
+Bot1: 309
+Bot2: 87
+Bot3: 0
+
+Match winner: Bot1 with 309 points (target 200).
