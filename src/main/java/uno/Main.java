@@ -1,8 +1,14 @@
 package uno;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
+
+import uno.persistence.Database;
+import uno.persistence.GameRepository;
+import uno.persistence.GameResult;
+import uno.persistence.Reports;
 
 public class Main {
     static ArrayList<String> playerNames = new ArrayList<String>();
@@ -16,6 +22,10 @@ public class Main {
     static String calledColor = "";
     static boolean quiet = false;
     static long seed = 0;
+    static boolean save = false;
+    static String reportMode = null;
+    static int roundCounter = 0;
+    static ArrayList<GameResult.RoundResult> roundResults = new ArrayList<GameResult.RoundResult>();
     static Random random = new Random();
     static Scanner scanner = new Scanner(System.in);
 
@@ -36,15 +46,29 @@ public class Main {
                 quiet = true;
             } else if (args[i].equals("--seed") && i + 1 < args.length) {
                 seed = Long.parseLong(args[++i]);
+            } else if (args[i].equals("--save")) {
+                save = true;
+            } else if (args[i].equals("--report")) {
+                reportMode = "all";
+                if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
+                    reportMode = args[++i];
+                }
             } else if (args[i].equals("--self-test")) {
                 selfTest();
                 return;
             } else if (args[i].equals("--help")) {
-                System.out.println("Usage: scripts/run.sh [--bots N] [--games N] [--human] [--quiet] [--seed N]");
+                System.out.println("Usage: scripts/run.sh [--bots N] [--games N] [--human] [--quiet] [--seed N] [--save] [--report [recent|wins|highscores]]");
                 return;
             }
         }
 
+        if (reportMode != null) {
+            runReport(reportMode);
+            return;
+        }
+
+        roundResults.clear();
+        roundCounter = 0;
         random = new Random(seed);
         deck = new Deck(random);
         setupPlayers(bots, human);
@@ -71,6 +95,10 @@ public class Main {
             summary.append(playerNames.get(i)).append("=").append(scores[i]);
         }
         GameLog.gameEnd(summary.toString());
+
+        if (save) {
+            persistGame();
+        }
     }
 
     static void setupPlayers(int bots, boolean human) {
@@ -90,6 +118,7 @@ public class Main {
     }
 
     static void playGame() {
+        roundCounter++;
         deck.startNewDeck();
         for (int i = 0; i < hands.size(); i++) {
             hands.get(i).clear();
@@ -209,6 +238,7 @@ public class Main {
                     }
                     scores[currentPlayer] += points;
                     GameLog.roundEnd(name, points);
+                    roundResults.add(new GameResult.RoundResult(roundCounter, name, points));
                     if (!quiet) {
                         System.out.println(name + " wins and scores " + points);
                     }
@@ -256,6 +286,7 @@ public class Main {
                 next();
             }
         }
+        roundResults.add(new GameResult.RoundResult(roundCounter, null, 0));
         if (!quiet) {
             System.out.println("Game stopped at safety limit.");
         }
@@ -389,6 +420,43 @@ public class Main {
             }
         }
         return out;
+    }
+
+    /** Print a history/statistics report from the database, then exit. */
+    static void runReport(String which) {
+        try (Database db = Database.open()) {
+            Reports reports = new Reports(new GameRepository(db));
+            if (which.equals("recent")) {
+                reports.printRecentGames(10);
+            } else if (which.equals("wins")) {
+                reports.printWinCounts();
+            } else if (which.equals("highscores") || which.equals("high") || which.equals("scores")) {
+                reports.printHighScores(10);
+            } else {
+                reports.printAll(10);
+            }
+        }
+    }
+
+    /** Persist the finished session (players, rounds, scores, winner, timestamp). */
+    static void persistGame() {
+        ArrayList<GameResult.PlayerScore> finalScores = new ArrayList<GameResult.PlayerScore>();
+        int best = -1;
+        String winner = null;
+        for (int i = 0; i < playerNames.size(); i++) {
+            finalScores.add(new GameResult.PlayerScore(playerNames.get(i), scores[i]));
+            if (scores[i] > best) {
+                best = scores[i];
+                winner = playerNames.get(i);
+            }
+        }
+        GameResult result = new GameResult(Instant.now(),
+                new ArrayList<String>(playerNames), roundResults, finalScores, winner);
+        try (Database db = Database.open()) {
+            GameRepository repo = new GameRepository(db);
+            Long id = repo.save(result);
+            System.out.println("\nSaved game #" + id + " to the database.");
+        }
     }
 
     static void selfTest() {

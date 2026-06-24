@@ -17,9 +17,25 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <main.class>uno.Main</main.class>
         <junit.version>5.10.2</junit.version>
+        <hibernate.version>6.4.4.Final</hibernate.version>
+        <h2.version>2.2.224</h2.version>
     </properties>
 
     <dependencies>
+        <!-- ORM / JPA provider (Assignment 5 persistence). -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
+
+        <!-- Embedded H2 database: file-based for normal use, in-memory for tests. -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>

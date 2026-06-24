@@ -84,6 +84,8 @@ scripts/run.sh --bots 3 --quiet    # package + java -jar
 | `--human`     | add a human player ("You")                |
 | `--quiet`     | suppress per-turn output, show final score |
 | `--seed N`    | fixed RNG seed (deterministic games)      |
+| `--save`      | save the finished game to the database    |
+| `--report [recent\|wins\|highscores]` | show history/stats, then exit |
 | `--help`      | print usage                               |
 
 ## Interactive play
@@ -108,16 +110,38 @@ invalid input, and round/game end — are written to `logs/uno.log` via
 it never replaces the player-facing CLI output. Override the directory with
 `-Duno.log.dir=<path>`.
 
+## Persistence (game history)
+
+Game history is stored with **Hibernate/JPA** in an embedded **H2** database
+(`./data/uno.mv.db`). Persistence is opt-in — normal play opens no database.
+
+```bash
+# save a finished game:
+java -jar target/uno.jar --bots 3 --games 3 --seed 7 --save
+
+# view history / statistics:
+java -jar target/uno.jar --report            # recent games + win counts + high scores
+java -jar target/uno.jar --report recent
+java -jar target/uno.jar --report wins
+java -jar target/uno.jar --report highscores
+```
+
+Full details — schema, ORM configuration, and how to run the persistence tests —
+are in [`docs/database.md`](docs/database.md).
+
 ## Project layout
 
 ```text
 pom.xml                          Maven build
 Dockerfile                       multi-stage build + run image
 src/main/java/uno/               game source (Card, Deck, Rank, Rules, Main, GameLog)
+src/main/java/uno/persistence/   ORM layer (entities, Database, GameRepository, Reports)
+src/main/resources/META-INF/     persistence.xml (JPA configuration)
 src/test/java/uno/               JUnit 5 tests (CharacterizationTest)
+src/test/java/uno/persistence/   persistence tests (GameRepositoryTest)
 src/test/resources/golden/       recorded golden transcripts
 scripts/                         convenience wrappers
-docs/                            rules and midterm materials
+docs/                            rules, midterm materials, database.md
 ```
 
 ## Rules
