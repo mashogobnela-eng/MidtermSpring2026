@@ -1,3 +1,5 @@
+package uno;
+
 /**
  * The kind of a card. Enum names match the string ranks the original code used
  * ("NUMBER", "SKIP", ...), so behavior and any rank-name output are unchanged.

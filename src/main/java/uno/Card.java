@@ -1,3 +1,5 @@
+package uno;
+
 /**
  * An immutable UNO card.
  *

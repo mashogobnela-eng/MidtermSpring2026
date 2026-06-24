@@ -1,9 +1,14 @@
+package uno;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Characterization tests for the UNO CLI.
@@ -16,51 +21,35 @@ import java.util.ArrayList;
  *   1. Unit-level checks against the rule/card/bot logic.
  *   2. End-to-end golden checks that run the real CLI (seeded, deterministic)
  *      in a child process and compare the full transcript byte-for-byte against
- *      a recording captured from the original code (tests/golden/*.txt).
+ *      a recording captured from the original code (golden/*.txt on the test
+ *      classpath).
  *
- * Run with: scripts/test.sh
+ * Migrated to JUnit 5 for Assignment 4 so the whole suite runs through
+ * {@code mvn test} with no manual classpath setup. Every original assertion is
+ * preserved; the {@code eq}/{@code assertGolden} helpers now delegate to JUnit
+ * assertions instead of hand-rolled pass/fail counters.
  */
 public class CharacterizationTest {
 
-    static int passed = 0;
-    static int failed = 0;
-
-    public static void main(String[] args) throws Exception {
-        matchByColor();
-        matchByNumber();
-        matchByActionType();
-        wildAndWildDrawFour();
-        calledColorAfterWild();
-        illegalMismatch();
-        cardParsing();
-        scoringPoints();
-        botCardPriority();
-        botNeverPlaysReverseFromHand_surprise();
-        botColorChoice();
-        endToEndGoldens();
-
-        System.out.println("Characterization: " + passed + " passed, " + failed + " failed.");
-        if (failed > 0) {
-            System.exit(1);
-        }
-    }
-
     // --- Required behavior: matching by color ---------------------------------
-    static void matchByColor() {
+    @Test
+    void matchByColor() {
         eq("color match: R2 on R9", true, Rules.isLegal(c("R2"), c("R9"), ""));
         eq("color match: B8 on B3", true, Rules.isLegal(c("B8"), c("B3"), ""));
         eq("color mismatch alone is not enough: B3 on R9", false, Rules.isLegal(c("B3"), c("R9"), ""));
     }
 
     // --- Required behavior: matching by number --------------------------------
-    static void matchByNumber() {
+    @Test
+    void matchByNumber() {
         eq("number match across colors: G9 on R9", true, Rules.isLegal(c("G9"), c("R9"), ""));
         eq("number match: B0 on G0", true, Rules.isLegal(c("B0"), c("G0"), ""));
         eq("different number, different color is illegal: G8 on R9", false, Rules.isLegal(c("G8"), c("R9"), ""));
     }
 
     // --- Required behavior: matching by action type ---------------------------
-    static void matchByActionType() {
+    @Test
+    void matchByActionType() {
         eq("skip on skip (diff color): BS on RS", true, Rules.isLegal(c("BS"), c("RS"), ""));
         eq("reverse on reverse (diff color): YR on GR", true, Rules.isLegal(c("YR"), c("GR"), ""));
         eq("draw-two on draw-two (diff color): R+2 on G+2", true, Rules.isLegal(c("R+2"), c("G+2"), ""));
@@ -69,24 +58,28 @@ public class CharacterizationTest {
     }
 
     // --- Required behavior: wild and wild draw four ---------------------------
-    static void wildAndWildDrawFour() {
+    @Test
+    void wildAndWildDrawFour() {
         eq("wild is always legal: W on R9", true, Rules.isLegal(c("W"), c("R9"), ""));
         eq("wild draw four is always legal: W4 on G+2", true, Rules.isLegal(c("W4"), c("G+2"), ""));
         eq("wild is legal even over a called color: W on (W called B)", true, Rules.isLegal(c("W"), c("W"), "B"));
     }
 
     // --- Required behavior: color called after a wild -------------------------
-    static void calledColorAfterWild() {
+    @Test
+    void calledColorAfterWild() {
         eq("called color matches: B3 on wild called B", true, Rules.isLegal(c("B3"), c("W"), "B"));
         eq("wrong color vs called color is illegal: R3 on wild called B", false, Rules.isLegal(c("R3"), c("W"), "B"));
     }
 
-    static void illegalMismatch() {
+    @Test
+    void illegalMismatch() {
         eq("plain mismatch is illegal: B3 on R9", false, Rules.isLegal(c("B3"), c("R9"), ""));
     }
 
     // --- Card parsing characterization (color / rank / number) ----------------
-    static void cardParsing() {
+    @Test
+    void cardParsing() {
         eq("color of R5", "R", c("R5").color());
         eq("color of YS", "Y", c("YS").color());
         eq("color of G+2", "G", c("G+2").color());
@@ -107,7 +100,8 @@ public class CharacterizationTest {
     }
 
     // --- Required behavior: scoring -------------------------------------------
-    static void scoringPoints() {
+    @Test
+    void scoringPoints() {
         eq("number card scores face value", 5, c("R5").points());
         eq("zero card scores zero", 0, c("B0").points());
         eq("skip scores 20", 20, c("YS").points());
@@ -118,7 +112,8 @@ public class CharacterizationTest {
     }
 
     // --- Bot strategy characterization ----------------------------------------
-    static void botCardPriority() {
+    @Test
+    void botCardPriority() {
         // Up card R9, no called color.
         Main.upCard = c("R9");
         Main.calledColor = "";
@@ -144,7 +139,8 @@ public class CharacterizationTest {
     // The bot's card selection scans only for draw-two, then skip, then number,
     // then any wild. A REVERSE is never selected from the hand: the bot draws
     // instead, even though a same-color reverse is a perfectly legal play.
-    static void botNeverPlaysReverseFromHand_surprise() {
+    @Test
+    void botNeverPlaysReverseFromHand_surprise() {
         Main.upCard = c("R9");   // RR (red reverse) is legal here by color.
         Main.calledColor = "";
         eq("SURPRISE: bot ignores a legal reverse and draws (-1)", -1,
@@ -153,7 +149,8 @@ public class CharacterizationTest {
         eq("the ignored reverse really is legal", true, Rules.isLegal(c("RR"), c("R9"), ""));
     }
 
-    static void botColorChoice() {
+    @Test
+    void botColorChoice() {
         eq("bot calls its majority color", "B", Main.chooseBotColor(hand("B1", "B2", "R3")));
         // Tie-break order is R >= Y >= G >= B, so a tie resolves to red.
         eq("bot color tie resolves to R", "R", Main.chooseBotColor(hand("R1", "B2")));
@@ -161,22 +158,23 @@ public class CharacterizationTest {
     }
 
     // --- End-to-end golden transcripts (deterministic, seeded) ----------------
-    static void endToEndGoldens() throws Exception {
+    @Test
+    void endToEndGoldens() throws Exception {
         // Full transcripts that end in a win and exercise skip, reverse
         // (including the 2-player reverse-as-skip case), draw two, wild,
         // wild draw four, drawing, bot auto-play of drawn cards, and scoring.
-        assertGolden("tests/golden/g_2bots_seed17.txt",
+        assertGolden("/golden/g_2bots_seed17.txt",
                 "--bots", "2", "--games", "1", "--seed", "17");
-        assertGolden("tests/golden/g_2bots_seed42.txt",
+        assertGolden("/golden/g_2bots_seed42.txt",
                 "--bots", "2", "--games", "1", "--seed", "42");
 
         // Quiet final-scores goldens, including stalls that reach the 3000-turn
         // safety limit (a real quirk of the current bot strategy).
-        assertGolden("tests/golden/g_quiet_2bots_seed1.txt",
+        assertGolden("/golden/g_quiet_2bots_seed1.txt",
                 "--bots", "2", "--games", "1", "--seed", "1", "--quiet");
-        assertGolden("tests/golden/g_quiet_3bots_seed42.txt",
+        assertGolden("/golden/g_quiet_3bots_seed42.txt",
                 "--bots", "3", "--games", "1", "--seed", "42", "--quiet");
-        assertGolden("tests/golden/g_quiet_4bots_seed7.txt",
+        assertGolden("/golden/g_quiet_4bots_seed7.txt",
                 "--bots", "4", "--games", "1", "--seed", "7", "--quiet");
     }
 
@@ -194,25 +192,37 @@ public class CharacterizationTest {
         return h;
     }
 
-    static void assertGolden(String goldenPath, String... gameArgs) throws Exception {
-        String expected = new String(Files.readAllBytes(Paths.get(goldenPath)), StandardCharsets.UTF_8);
+    /** Original assertion shape, now backed by JUnit so failures stop the build. */
+    static void eq(String name, Object expected, Object actual) {
+        assertEquals(expected, actual, name);
+    }
+
+    static void assertGolden(String goldenResource, String... gameArgs) throws Exception {
+        String expected = readResource(goldenResource);
         String actual = runGame(gameArgs);
-        if (expected.equals(actual)) {
-            passed++;
-        } else {
-            failed++;
-            System.out.println("FAIL golden: " + goldenPath);
-            System.out.println(firstDifference(expected, actual));
+        assertEquals(expected, actual, "golden transcript mismatch: " + goldenResource
+                + "\n" + firstDifference(expected, actual));
+    }
+
+    static String readResource(String resource) throws Exception {
+        try (InputStream in = CharacterizationTest.class.getResourceAsStream(resource)) {
+            assertNotNull(in, "missing golden resource on test classpath: " + resource);
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
 
-    /** Runs the real CLI in a child process so the entry point is tested as the grader runs it. */
+    /**
+     * Runs the real CLI in a child process so the entry point is tested as the
+     * grader runs it. The classpath is taken from the running test JVM (which,
+     * under Maven Surefire, includes {@code target/classes}), so no manual
+     * classpath wiring is needed.
+     */
     static String runGame(String... gameArgs) throws Exception {
         ArrayList<String> cmd = new ArrayList<String>();
         cmd.add(javaBin());
         cmd.add("-cp");
-        cmd.add("out");
-        cmd.add("Main");
+        cmd.add(System.getProperty("java.class.path"));
+        cmd.add("uno.Main");
         for (String a : gameArgs) {
             cmd.add(a);
         }
@@ -255,15 +265,5 @@ public class CharacterizationTest {
 
     static String escape(String s) {
         return s.replace("\n", "\\n");
-    }
-
-    static void eq(String name, Object expected, Object actual) {
-        boolean ok = expected == null ? actual == null : expected.equals(actual);
-        if (ok) {
-            passed++;
-        } else {
-            failed++;
-            System.out.println("FAIL: " + name + " (expected=" + expected + " actual=" + actual + ")");
-        }
     }
 }

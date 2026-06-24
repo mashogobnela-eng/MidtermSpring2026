@@ -1,7 +1,5 @@
 #!/usr/bin/env sh
 set -eu
 
-rm -rf out
-mkdir -p out
-javac -d out src/*.java tests/*.java
-java -cp out CharacterizationTest
+# Run the JUnit 5 test suite through Maven. Equivalent to: mvn test
+exec mvn -B test

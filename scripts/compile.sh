@@ -1,6 +1,5 @@
 #!/usr/bin/env sh
 set -eu
 
-rm -rf out
-mkdir -p out
-javac -d out src/*.java
+# Compile through Maven (Assignment 4). Equivalent to: mvn -q -B compile
+exec mvn -q -B compile

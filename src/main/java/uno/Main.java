@@ -1,3 +1,5 @@
+package uno;
+
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
@@ -13,6 +15,7 @@ public class Main {
     static Card upCard = null;
     static String calledColor = "";
     static boolean quiet = false;
+    static long seed = 0;
     static Random random = new Random();
     static Scanner scanner = new Scanner(System.in);
 
@@ -20,7 +23,7 @@ public class Main {
         int bots = 3;
         int games = 1;
         boolean human = false;
-        long seed = System.currentTimeMillis();
+        seed = System.currentTimeMillis();
 
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("--bots") && i + 1 < args.length) {
@@ -59,9 +62,15 @@ public class Main {
         }
 
         System.out.println("\nFinal scores:");
+        StringBuilder summary = new StringBuilder();
         for (int i = 0; i < playerNames.size(); i++) {
             System.out.println(playerNames.get(i) + ": " + scores[i]);
+            if (i > 0) {
+                summary.append(", ");
+            }
+            summary.append(playerNames.get(i)).append("=").append(scores[i]);
         }
+        GameLog.gameEnd(summary.toString());
     }
 
     static void setupPlayers(int bots, boolean human) {
@@ -98,12 +107,14 @@ public class Main {
         calledColor = "";
         direction = 1;
         currentPlayer = random.nextInt(playerNames.size());
+        GameLog.gameStart(playerNames.size(), seed);
 
         int guard = 0;
         while (guard < 3000) {
             guard++;
             String name = playerNames.get(currentPlayer);
             ArrayList<Card> hand = hands.get(currentPlayer);
+            GameLog.playerTurn(name, hand.size(), upCard.toString(), calledColor);
 
             if (!quiet) {
                 System.out.println("\nUp card: " + upCard + (calledColor.equals("") ? "" : " called " + calledColor));
@@ -120,6 +131,7 @@ public class Main {
             if (chosen == -1) {
                 Card drawn = deck.draw();
                 hand.add(drawn);
+                GameLog.cardDrawn(name, drawn.toString());
                 if (!quiet) {
                     System.out.println(name + " draws " + drawn);
                 }
@@ -138,10 +150,13 @@ public class Main {
 
             if (chosen >= 0) {
                 if (chosen >= hand.size()) {
+                    GameLog.invalidInput(name, "index " + chosen + " out of range");
                     if (!quiet) {
                         System.out.println(name + " selected an invalid index and draws a penalty card.");
                     }
-                    hand.add(deck.draw());
+                    Card penalty = deck.draw();
+                    hand.add(penalty);
+                    GameLog.cardDrawn(name, penalty.toString());
                     next();
                     continue;
                 }
@@ -150,10 +165,13 @@ public class Main {
                 boolean ok = Rules.isLegal(card, upCard, calledColor);
 
                 if (!ok) {
+                    GameLog.invalidInput(name, "illegal card " + card);
                     if (!quiet) {
                         System.out.println(name + " tried illegal card " + card + " and draws a penalty card.");
                     }
-                    hand.add(deck.draw());
+                    Card penalty = deck.draw();
+                    hand.add(penalty);
+                    GameLog.cardDrawn(name, penalty.toString());
                     next();
                     continue;
                 }
@@ -162,6 +180,7 @@ public class Main {
                 deck.discard(upCard);
                 upCard = card;
                 calledColor = "";
+                GameLog.cardPlayed(name, card.toString());
                 if (!quiet) {
                     System.out.println(name + " plays " + card);
                 }
@@ -189,6 +208,7 @@ public class Main {
                         }
                     }
                     scores[currentPlayer] += points;
+                    GameLog.roundEnd(name, points);
                     if (!quiet) {
                         System.out.println(name + " wins and scores " + points);
                     }
@@ -208,8 +228,12 @@ public class Main {
                     }
                 } else if (card.rank() == Rank.DRAW_TWO) {
                     next();
-                    hands.get(currentPlayer).add(deck.draw());
-                    hands.get(currentPlayer).add(deck.draw());
+                    Card d1 = deck.draw();
+                    Card d2 = deck.draw();
+                    hands.get(currentPlayer).add(d1);
+                    hands.get(currentPlayer).add(d2);
+                    GameLog.cardDrawn(playerNames.get(currentPlayer), d1.toString());
+                    GameLog.cardDrawn(playerNames.get(currentPlayer), d2.toString());
                     if (!quiet) {
                         System.out.println(playerNames.get(currentPlayer) + " draws two.");
                     }
@@ -217,7 +241,9 @@ public class Main {
                 } else if (card.rank() == Rank.WILD_DRAW_FOUR) {
                     next();
                     for (int i = 0; i < 4; i++) {
-                        hands.get(currentPlayer).add(deck.draw());
+                        Card d = deck.draw();
+                        hands.get(currentPlayer).add(d);
+                        GameLog.cardDrawn(playerNames.get(currentPlayer), d.toString());
                     }
                     if (!quiet) {
                         System.out.println(playerNames.get(currentPlayer) + " draws four.");
@@ -287,9 +313,11 @@ public class Main {
                     if (Rules.isLegal(hand.get(i), upCard, calledColor)) {
                         return i;
                     }
+                    GameLog.invalidInput("You", "illegal selection " + input);
                     System.out.println("That card is not legal.");
                 }
             }
+            GameLog.invalidInput("You", "card not found: " + input);
             System.out.println("Card not found.");
         }
     }
